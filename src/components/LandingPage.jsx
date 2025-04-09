@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import SearchBar from './SearchBar';
+import GenreQuickAccess from './GenreQuickAccess';
 import { fetchTrending } from '../services/apiClient';
 import DetailsModal from './DetailsModal';
 
@@ -63,42 +64,12 @@ const LandingPage = ({ onSearch }) => {
   };
   
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-900 text-white">
       {/* Hero Section */}
-      <section className="relative py-20 md:py-32 overflow-hidden">
-        {/* Background elements */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-black"></div>
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1478720568477-152d9b164e26?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80')] opacity-10 bg-cover bg-center"></div>
+      <section className="relative py-20 overflow-hidden">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/90 via-gray-900 to-gray-900"></div>
         
-        {/* Animated circles */}
-        <motion.div 
-          className="absolute top-1/4 right-1/4 w-64 h-64 rounded-full bg-purple-600 filter blur-3xl"
-          animate={{ 
-            x: [0, 30, 0], 
-            y: [0, -30, 0],
-            opacity: [0.2, 0.3, 0.2]
-          }}
-          transition={{ 
-            duration: 8, 
-            repeat: Infinity,
-            ease: "easeInOut" 
-          }}
-        />
-        <motion.div 
-          className="absolute bottom-1/4 left-1/4 w-80 h-80 rounded-full bg-pink-600 filter blur-3xl"
-          animate={{ 
-            x: [0, -40, 0], 
-            y: [0, 40, 0],
-            opacity: [0.15, 0.25, 0.15]
-          }}
-          transition={{ 
-            duration: 10, 
-            repeat: Infinity,
-            ease: "easeInOut" 
-          }}
-        />
-        
-        {/* Hero content */}
         <div className="container mx-auto px-6 relative z-10">
           <motion.div 
             className="flex flex-col items-center text-center"
@@ -124,6 +95,20 @@ const LandingPage = ({ onSearch }) => {
               variants={fadeInUp}
             >
               <SearchBar onSearch={onSearch} isLoading={false} />
+            </motion.div>
+
+            {/* Genre Quick Selection */}
+            <motion.div 
+              className="w-full max-w-4xl mb-12"
+              variants={fadeInUp}
+            >
+              <motion.h2 
+                className="text-2xl font-bold mb-6 text-white text-center"
+                variants={fadeInUp}
+              >
+                Explore by Genre
+              </motion.h2>
+              <GenreQuickAccess onGenreSelect={(genre) => onSearch(genre, 'genre')} />
             </motion.div>
             
             {/* Statistics */}

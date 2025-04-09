@@ -125,7 +125,7 @@ async function fetchSimilarityRecommendations(title) {
         
         // Process recommendations
         const recommendData = await recommendResponse.json();
-        return (recommendData.results || []).slice(0, 20).map(item => formatTMDBResult(item, mediaType));
+        return (recommendData.results || []).slice(0, 30).map(item => formatTMDBResult(item, mediaType));
         
     } catch (error) {
         console.error(`Error in fetchSimilarityRecommendations:`, error);
@@ -304,7 +304,8 @@ async function fetchSimilarMedia(media) {
 async function fetchTMDBSearch(query, mediaType = 'multi') {
     console.log(`Searching TMDB for: "${query}" with type: ${mediaType}`);
     try {
-        const url = `${TMDB_API_URL}/search/${mediaType}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`;
+        // Add page_size parameter to get more results
+        const url = `${TMDB_API_URL}/search/${mediaType}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&page=1&include_adult=false&language=en-US`;
         
         console.log(`Making TMDB search API call to: ${TMDB_API_URL}/search/${mediaType}`);
         const response = await fetch(url);
@@ -321,9 +322,27 @@ async function fetchTMDBSearch(query, mediaType = 'multi') {
             return [];
         }
         
+        // Try to get a second page of results to have more recommendations
+        let allResults = [...data.results];
+        
+        try {
+            const page2Url = `${TMDB_API_URL}/search/${mediaType}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&page=2&include_adult=false&language=en-US`;
+            const page2Response = await fetch(page2Url);
+            
+            if (page2Response.ok) {
+                const page2Data = await page2Response.json();
+                if (page2Data.results && page2Data.results.length > 0) {
+                    allResults = [...allResults, ...page2Data.results];
+                }
+            }
+        } catch (err) {
+            console.log('Error fetching page 2 results:', err);
+            // Continue with just page 1 results
+        }
+        
         // Map the TMDB results to our app's format
-        const filtered = data.results.filter(item => item.media_type !== 'person');
-        console.log(`Found ${data.results.length} total results, ${filtered.length} after filtering`);
+        const filtered = allResults.filter(item => item.media_type !== 'person');
+        console.log(`Found ${allResults.length} total results, ${filtered.length} after filtering`);
         
         const mapped = filtered.map(item => {
             const isMovie = item.media_type === 'movie' || (!item.media_type && item.title);
@@ -350,7 +369,7 @@ async function fetchTMDBSearch(query, mediaType = 'multi') {
 async function fetchTMDBGenreMovies(genreId) {
     console.log(`Fetching movies for genre ID: ${genreId}`);
     try {
-        const url = `${TMDB_API_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc`;
+        const url = `${TMDB_API_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=1&language=en-US`;
         
         console.log(`Making TMDB genre API call to: ${TMDB_API_URL}/discover/movie`);
         const response = await fetch(url);
@@ -367,8 +386,27 @@ async function fetchTMDBGenreMovies(genreId) {
             return [];
         }
         
+        // Get a second page of results for more variety
+        let allResults = [...data.results];
+        
+        try {
+            const page2Url = `${TMDB_API_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=2&language=en-US`;
+            const page2Response = await fetch(page2Url);
+            
+            if (page2Response.ok) {
+                const page2Data = await page2Response.json();
+                if (page2Data.results && page2Data.results.length > 0) {
+                    allResults = [...allResults, ...page2Data.results];
+                    console.log(`Added ${page2Data.results.length} more results from page 2`);
+                }
+            }
+        } catch (err) {
+            console.log('Error fetching page 2 of genre results:', err);
+            // Continue with just page 1 results
+        }
+        
         // Map the TMDB results to our app's format
-        const mapped = data.results.map(item => ({
+        const mapped = allResults.map(item => ({
             id: item.id,
             title: item.title,
             posterUrl: item.poster_path ? `${TMDB_IMG_BASE_URL}${item.poster_path}` : null,
